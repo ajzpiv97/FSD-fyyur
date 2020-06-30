@@ -45,7 +45,7 @@ class Venue(db.Model):
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.Boolean)
     website = db.Column(db.String)
-    show = db.relationship('Shows', backref='Artist', lazy='dynamic')
+    show = db.relationship('Show', backref='Venue', lazy='true')
 
     def __repr__(self):
         return f'<Venue {self.id}, {self.name}'
@@ -67,6 +67,7 @@ class Artist(db.Model):
     seeking_venue = db.Column(db.BOOLEAN)
     seeking_description = db.Column(db.BOOLEAN)
     website = db.Column(db.String)
+    show = db.relationship('Show', backref='Artist', lazy='true')
 
     def __repr__(self):
         return f'<Artist {self.id}, {self.name}'
@@ -118,6 +119,8 @@ def index():
 def venues():
     # TODO: replace with real venues data.
     #       num_shows should be aggregated based on number of upcoming shows per venue.
+
+
     data = [{
         "city": "San Francisco",
         "state": "CA",
