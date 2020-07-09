@@ -58,7 +58,7 @@ class Artist(db.Model):
     state = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120))
     genres = db.Column(db.ARRAY(db.String()), nullable=False)
-    image_link = db.Column(db.String(500))
+    image_link = db.Column(db.String(500), nullable=False)
     facebook_link = db.Column(db.String(120))
     shows = db.relationship('Show', backref='artist', lazy=True)
 
@@ -111,6 +111,7 @@ def venues():
     unique_locations = set()
     all_venues = Venue.query.all()
 
+    # Search for only unique venues
     for venue in all_venues:
         unique_locations.add((venue.city, venue.state))
 
@@ -128,12 +129,15 @@ def venues():
 
         current_date = datetime.now()
 
+        # Count for upcoming shows after current date
         for show in all_shows:
             if show.start_time > current_date:
                 num_upcoming_shows += 1
 
+        #
         for unique_venue in data:
-            if venue.city == unique_venue['city'] and unique_venue['state']:
+            # Show existing venues with shows
+            if venue.city == unique_venue['city'] and venue.state == unique_venue['state']:
                 unique_venue['venues'].append({
                     "id": venue.id,
                     "name": venue.name,
@@ -147,6 +151,7 @@ def search_venues():
     search_term = request.form.get('search_term', '')
     data = Venue.query.filter(Venue.name.ilike(f'%{search_term}%'))
 
+    # Search for venue depending on criteria
     results = {
         "count": data.count(),
         "data": data
@@ -156,13 +161,14 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
-    # shows the venue page with the given venue_id
+    # Shows the venue page with the given venue_id
     venue = Venue.query.get(venue_id)
     select_shows = Show.query.filter_by(venue_id=venue_id).all()
     past_shows = []
     upcoming_shows = []
     current_time = datetime.now()
 
+    # Search for upcoming and previous shows
     for show in select_shows:
         data = {
             "artist_id": show.artist_id,
