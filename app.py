@@ -2,18 +2,16 @@
 # Imports
 # ----------------------------------------------------------------------------#
 
-import json
-import dateutil.parser
-import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+import babel.dates
+from flask import Flask, render_template, request, flash, redirect, url_for
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import logging
 from logging import Formatter, FileHandler
-from flask_wtf import FlaskForm
 from sqlalchemy.exc import SQLAlchemyError
 from forms import *
+from datetime import datetime
 
 # ----------------------------------------------------------------------------#
 # App Config.
@@ -58,7 +56,7 @@ class Artist(db.Model):
     city = db.Column(db.String(120), nullable=False)
     state = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120))
-    genres = db.Column("genres", db.ARRAY(db.String()), nullable=False)
+    genres = db.Column(db.ARRAY(db.String()), nullable=False)
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     shows = db.relationship('Show', backref='artist', lazy=True)
@@ -82,17 +80,13 @@ class Show(db.Model):
 # ----------------------------------------------------------------------------#
 # Filters.
 # ----------------------------------------------------------------------------#
-
-def format_datetime(value, format='medium'):
-    date = dateutil.parser.parse(value)
-    if format == 'full':
-        format = "EEEE MMMM, d, y 'at' h:mma"
-    elif format == 'medium':
-        format = "EE MM, dd, y h:mma"
-    return babel.dates.format_datetime(date, format)
-
-
-app.jinja_env.filters['datetime'] = format_datetime
+@app.template_filter()
+def format_date_time(value, date_format='medium'):
+    if date_format == 'full':
+        date_format = "EEEE, d. MMMM y 'at' HH:mm"
+    elif date_format == 'medium':
+        date_format = "EE dd.MM.y HH:mm"
+    return babel.dates.format_datetime(value, date_format)
 
 
 # ----------------------------------------------------------------------------#
@@ -110,40 +104,33 @@ def index():
 @app.route('/venues')
 def venues():
     data = []
+    unique_locations = set()
+    all_venues = Venue.query.all()
 
-    # get all venues
-    venues = Venue.query.all()
+    for venue in all_venues:
+        unique_locations.add((venue.city, venue.state))
 
-    # Use set so there are no duplicate venues
-    locations = set()
-
-    for venue in venues:
-        # add city/state tuples
-        locations.add((venue.city, venue.state))
-
-    # for each unique city/state, add venues
-    for location in locations:
+    for unique_spot in unique_locations:
         data.append({
-            "city": location[0],
-            "state": location[1],
+            "city": unique_spot[0],
+            "state": unique_spot[1],
             "venues": []
         })
 
-    for venue in venues:
+    for venue in all_venues:
         num_upcoming_shows = 0
 
-        shows = Show.query.filter_by(venue_id=venue.id).all()
+        all_shows = Show.query.filter_by(venue_id=venue.id).all()
 
-        # get current date to filter num_upcoming_shows
         current_date = datetime.now()
 
-        for show in shows:
+        for show in all_shows:
             if show.start_time > current_date:
                 num_upcoming_shows += 1
 
-        for venue_location in data:
-            if venue.state == venue_location['state'] and venue.city == venue_location['city']:
-                venue_location['venues'].append({
+        for unique_venue in data:
+            if venue.city == unique_venue['city'] and unique_venue['state']:
+                unique_venue['venues'].append({
                     "id": venue.id,
                     "name": venue.name,
                     "num_upcoming_shows": num_upcoming_shows
@@ -154,30 +141,30 @@ def venues():
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
     search_term = request.form.get('search_term', '')
-    result = Venue.query.filter(Venue.name.ilike(f'%{search_term}%'))
+    data = Venue.query.filter(Venue.name.ilike(f'%{search_term}%'))
 
-    response = {
-        "count": result.count(),
-        "data": result
+    results = {
+        "count": data.count(),
+        "data": data
     }
-    return render_template('pages/search_venues.html', results=response, search_term=search_term)
+    return render_template('pages/search_venues.html', results=results, search_term=search_term)
 
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
     # shows the venue page with the given venue_id
     venue = Venue.query.get(venue_id)
-    shows = Show.query.filter_by(venue_id=venue_id).all()
+    select_shows = Show.query.filter_by(venue_id=venue_id).all()
     past_shows = []
     upcoming_shows = []
     current_time = datetime.now()
 
-    for show in shows:
+    for show in select_shows:
         data = {
             "artist_id": show.artist_id,
             "artist_name": show.artist.name,
             "artist_image_link": show.artist.image_link,
-            "start_time": format_datetime(str(show.start_time))
+            "start_time": babel.dates.format_datetime(str(show.start_time))
         }
         if show.start_time > current_time:
             upcoming_shows.append(data)
@@ -242,6 +229,7 @@ def create_venue_submission():
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
+    venue_name = ''
     try:
         # Get venue by ID
         venue = Venue.query.get(venue_id)
@@ -252,7 +240,7 @@ def delete_venue(venue_id):
 
         flash('Venue ' + venue_name + ' was deleted')
     except SQLAlchemyError:
-        flash('an error occured and Venue ' + venue_name + ' was not deleted')
+        flash('an error occurred and Venue ' + venue_name + ' was not deleted')
         db.session.rollback()
     finally:
         db.session.close()
@@ -266,9 +254,9 @@ def delete_venue(venue_id):
 def artists():
     data = []
 
-    artists = Artist.query.all()
+    all_artists = Artist.query.all()
 
-    for artist in artists:
+    for artist in all_artists:
         data.append({
             "id": artist.id,
             "name": artist.name
@@ -295,18 +283,18 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
     artist = Artist.query.get(artist_id)
-    shows = Show.query.filter_by(artist_id=artist_id).all()
+    all_shows = Show.query.filter_by(artist_id=artist_id).all()
     past_shows = []
     upcoming_shows = []
     current_time = datetime.now()
 
     # Filter shows by upcoming and past
-    for show in shows:
+    for show in all_shows:
         data = {
             "venue_id": show.venue_id,
             "venue_name": show.venue.name,
             "venue_image_link": show.venue.image_link,
-            "start_time": format_datetime(str(show.start_time))
+            "start_time": format_date_time(str(show.start_time))
         }
         if show.start_time > current_time:
             upcoming_shows.append(data)
@@ -357,11 +345,7 @@ def edit_artist(artist_id):
 def edit_artist_submission(artist_id):
     try:
         form = ArtistForm()
-
         artist = Artist.query.get(artist_id)
-
-        artist.name = form.name.data
-
         artist.name = form.name.data
         artist.phone = form.phone.data
         artist.state = form.state.data
@@ -466,6 +450,7 @@ def create_artist_submission():
 
 @app.route('/artist/<artist_id>', methods=['DELETE'])
 def delete_artist(artist_id):
+    artist_name = ''
     try:
 
         artist = Artist.query.get(artist_id)
@@ -489,18 +474,18 @@ def delete_artist(artist_id):
 
 @app.route('/shows')
 def shows():
-    shows = Show.query.order_by(db.desc(Show.start_time))
+    all_shows = Show.query.order_by(db.desc(Show.start_time))
 
     data = []
 
-    for show in shows:
+    for show in all_shows:
         data.append({
             "venue_id": show.venue_id,
             "venue_name": show.venue.name,
             "artist_id": show.artist_id,
             "artist_name": show.artist.name,
             "artist_image_link": show.artist.image_link,
-            "start_time": format_datetime(str(show.start_time))
+            "start_time": format_date_time(str(show.start_time))
         })
 
     return render_template('pages/shows.html', shows=data)
@@ -533,12 +518,12 @@ def create_show_submission():
 
 
 @app.errorhandler(404)
-def not_found_error(error):
+def not_found_error():
     return render_template('errors/404.html'), 404
 
 
 @app.errorhandler(500)
-def server_error(error):
+def server_error():
     return render_template('errors/500.html'), 500
 
 
