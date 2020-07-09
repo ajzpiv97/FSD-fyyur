@@ -476,7 +476,7 @@ def delete_artist(artist_id):
 
         flash('Artist ' + artist_name + ' was deleted')
     except SQLAlchemyError:
-        flash('an error occured and Artist ' + artist_name + ' was not deleted')
+        flash('an error occurred and Artist ' + artist_name + ' was not deleted')
         db.session.rollback()
     finally:
         db.session.close()
