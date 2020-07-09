@@ -3,6 +3,7 @@
 # ----------------------------------------------------------------------------#
 
 import babel.dates
+import dateutil.parser
 from flask import Flask, render_template, request, flash, redirect, url_for
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
@@ -80,13 +81,16 @@ class Show(db.Model):
 # ----------------------------------------------------------------------------#
 # Filters.
 # ----------------------------------------------------------------------------#
-@app.template_filter()
-def format_date_time(value, date_format='medium'):
+def format_datetime(value, date_format='medium'):
+    date = dateutil.parser.parse(value)
     if date_format == 'full':
-        date_format = "EEEE, d. MMMM y 'at' HH:mm"
+        date_format = "EEEE MMMM, d, y 'at' h:mma"
     elif date_format == 'medium':
-        date_format = "EE dd.MM.y HH:mm"
-    return babel.dates.format_datetime(value, date_format)
+        date_format = "EE MM, dd, y h:mma"
+    return babel.dates.format_datetime(date, date_format)
+
+
+app.jinja_env.filters['datetime'] = format_datetime
 
 
 # ----------------------------------------------------------------------------#
@@ -164,7 +168,7 @@ def show_venue(venue_id):
             "artist_id": show.artist_id,
             "artist_name": show.artist.name,
             "artist_image_link": show.artist.image_link,
-            "start_time": babel.dates.format_datetime(str(show.start_time))
+            "start_time": format_datetime(str(show.start_time))
         }
         if show.start_time > current_time:
             upcoming_shows.append(data)
@@ -294,7 +298,7 @@ def show_artist(artist_id):
             "venue_id": show.venue_id,
             "venue_name": show.venue.name,
             "venue_image_link": show.venue.image_link,
-            "start_time": format_date_time(str(show.start_time))
+            "start_time": format_datetime(str(show.start_time))
         }
         if show.start_time > current_time:
             upcoming_shows.append(data)
@@ -485,7 +489,7 @@ def shows():
             "artist_id": show.artist_id,
             "artist_name": show.artist.name,
             "artist_image_link": show.artist.image_link,
-            "start_time": format_date_time(str(show.start_time))
+            "start_time": format_datetime(str(show.start_time))
         })
 
     return render_template('pages/shows.html', shows=data)
@@ -518,12 +522,12 @@ def create_show_submission():
 
 
 @app.errorhandler(404)
-def not_found_error():
+def not_found_error(error):
     return render_template('errors/404.html'), 404
 
 
 @app.errorhandler(500)
-def server_error():
+def server_error(error):
     return render_template('errors/500.html'), 500
 
 
