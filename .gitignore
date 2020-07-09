@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 *.log
 .DS_Store
 venv
 .idea
 migrations
 __pycache__
-||||||| (empty tree)
-=======
-venv
-.idea
->>>>>>> 52bd8be... Initial Commit
