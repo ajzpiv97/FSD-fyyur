@@ -47,7 +47,7 @@ class Venue(db.Model):
     shows = db.relationship('Show', backref='venue', lazy=True)
 
     def __repr__(self):
-      return f'<Venue {self.id} name: {self.name}>'
+        return f'<Venue {self.id} name: {self.name}>'
 
 
 class Artist(db.Model):
@@ -64,7 +64,7 @@ class Artist(db.Model):
     shows = db.relationship('Show', backref='artist', lazy=True)
 
     def __repr__(self):
-      return f'<Artist {self.id} name: {self.name}>'
+        return f'<Artist {self.id} name: {self.name}>'
 
 
 class Show(db.Model):
@@ -76,7 +76,8 @@ class Show(db.Model):
     start_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     def __repr__(self):
-      return f'<Show {self.id}, Artist {self.artist_id}, Venue {self.venue_id}>'
+        return f'<Show {self.id}, Artist {self.artist_id}, Venue {self.venue_id}>'
+
 
 # ----------------------------------------------------------------------------#
 # Filters.
@@ -221,7 +222,7 @@ def create_venue_submission():
         form = VenueForm()
         venue = Venue(name=form.name.data, city=form.city.data, state=form.state.data, address=form.address.data,
                       phone=form.phone.data, image_link=form.image_link.data, facebook_link=form.facebook_link.data,
-                      seeking_description=form.seeking_description.data,  seeking_talent=form.seeking_talent.data,
+                      seeking_description=form.seeking_description.data, seeking_talent=form.seeking_talent.data,
                       website=form.website.data, genres=form.genres.data)
         # commit session to database
         db.session.add(venue)
