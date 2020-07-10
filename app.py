@@ -171,12 +171,12 @@ def show_venue(venue_id):
     current_time = datetime.now()
 
     # Search for upcoming shows
-    upcoming_shows_query = db.session.query(Show).join(Artist, Show.artist_id == Artist.id).filter(
+    upcoming_shows_query = db.session.query(Show).join(Venue, Show.venue_id == venue.id).filter(
         Show.start_time > current_time).all()
     upcoming_shows = []
 
     # Search for past shows
-    past_shows_query = db.session.query(Show).outerjoin(Artist, Show.artist_id == Artist.id).filter(
+    past_shows_query = db.session.query(Show).join(Venue, Show.venue_id == venue.id).filter(
         Show.start_time < current_time).all()
     past_shows = []
 
@@ -324,31 +324,31 @@ def show_artist(artist_id):
     current_time = datetime.now()
 
     # Search for upcoming shows
-    upcoming_shows_query = db.session.query(Show).join(Venue, Show.venue_id == Venue.id).filter(
+    upcoming_shows_query = db.session.query(Show).join(Artist, Show.artist_id == artist.id).filter(
         Show.start_time > current_time).all()
     upcoming_shows = []
 
     # Search for past shows
-    past_shows_query = db.session.query(Show).join(Venue, Show.venue_id == Venue.id).filter(
+    past_shows_query = db.session.query(Show).join(Artist, Show.artist_id == artist.id).filter(
         Show.start_time < current_time).all()
     past_shows = []
 
     # Search for upcoming and previous shows
     for query in upcoming_shows_query:
         data = {
-            "artist_id": query.venue.id,
-            "artist_name": query.venue.name,
-            "artist_image_link": query.venue.image_link,
+            "venue_id": query.venue.id,
+            "venue_name": query.venue.name,
+            "venue_image_link": query.venue.image_link,
             "start_time": format_datetime(str(query.start_time))
         }
         upcoming_shows.append(data)
 
-    for show in past_shows_query:
+    for query in past_shows_query:
         data = {
-            "artist_id": show.artist_id,
-            "artist_name": show.artist.name,
-            "artist_image_link": show.artist.image_link,
-            "start_time": format_datetime(str(show.start_time))
+            "artist_id": query.venue.id,
+            "artist_name": query.venue.name,
+            "artist_image_link": query.venue.image_link,
+            "start_time": format_datetime(str(query.start_time))
         }
         past_shows.append(data)
 
