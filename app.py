@@ -11,6 +11,7 @@ from flask_migrate import Migrate
 import logging
 from logging import Formatter, FileHandler
 from sqlalchemy.exc import SQLAlchemyError
+from wtforms import ValidationError
 from forms import *
 from datetime import datetime
 
@@ -242,6 +243,14 @@ def create_venue_submission():
                       phone=form.phone.data, image_link=form.image_link.data, facebook_link=form.facebook_link.data,
                       seeking_description=form.seeking_description.data, seeking_talent=form.seeking_talent.data,
                       website=form.website.data, genres=form.genres.data)
+
+        if not form.validate_phone(venue.phone):
+            db.session.rollback()
+            flash('An error occurred. Venue ' + request.form['name'] + ' could not be listed.')
+            # closes session
+            db.session.close()
+            return render_template('pages/home.html')
+
         # commit session to database
         db.session.add(venue)
         db.session.commit()
@@ -409,6 +418,13 @@ def edit_artist_submission(artist_id):
         artist.image_link = form.image_link.data
         artist.facebook_link = form.facebook_link.data
 
+        if not form.validate_phone(artist.phone):
+            db.session.rollback()
+            flash('An error occurred. Artist ' + request.form['name'] + ' could not be edited.')
+            # closes session
+            db.session.close()
+            return render_template('pages/home.html')
+
         db.session.commit()
         flash('The Artist ' + request.form['name'] + ' has been successfully updated!')
     except SQLAlchemyError:
@@ -465,6 +481,13 @@ def edit_venue_submission(venue_id):
         venue.seeking_talent = form.seeking_talent.data
         venue.seeking_description = form.seeking_description.data
 
+        if not form.validate_phone(venue.phone):
+            db.session.rollback()
+            flash('An error occurred. Venue ' + request.form['name'] + ' could not be edited.')
+            # closes session
+            db.session.close()
+            return render_template('pages/home.html')
+
         db.session.commit()
         flash('Venue ' + name + ' has been updated')
     except SQLAlchemyError:
@@ -500,6 +523,13 @@ def create_artist_submission():
 
         db.session.add(artist)
         db.session.commit()
+
+        if not form.validate_phone(artist.phone):
+            db.session.rollback()
+            flash('An error occurred. Artist ' + request.form['name'] + ' could not be created.')
+            # closes session
+            db.session.close()
+            return render_template('pages/home.html')
 
         flash('Artist ' + request.form['name'] + ' was successfully listed!')
     except SQLAlchemyError:
