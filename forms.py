@@ -204,9 +204,8 @@ class ArtistForm(FlaskForm):
     @staticmethod
     def validate_phone(phone):
         regex = "\w{3}\w{3}\w{4}"
-        match = re.search(regex, phone)
-        if not match:
-            return False
+        if re.search(regex, phone):
+            return True
 
     image_link = StringField(
         'image_link'
