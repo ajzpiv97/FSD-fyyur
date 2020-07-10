@@ -58,7 +58,7 @@ class Artist(db.Model):
     state = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120))
     genres = db.Column(db.ARRAY(db.String()), nullable=False)
-    image_link = db.Column(db.String(500), nullable=False)
+    image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     shows = db.relationship('Show', backref='artist', lazy=True)
 
@@ -167,12 +167,33 @@ def show_venue(venue_id):
     current_time = datetime.now()
 
     # Search for upcoming shows
-    upcoming_shows_query = db.session.query(Show).join(Venue).filter(Show.venue_id == venue_id).filter(
+    upcoming_shows_query = db.session.query(Show).join(Artist, Show.artist_id == Artist.id).filter(
         Show.start_time > current_time).all()
+    upcoming_shows = []
 
     # Search for past shows
-    past_shows_query = db.session.query(Show).join(Venue).filter(Show.venue_id == venue_id).filter(
+    past_shows_query = db.session.query(Show).outerjoin(Artist,Show.artist_id == Artist.id).filter(
         Show.start_time < current_time).all()
+    past_shows = []
+
+    # Search for upcoming and previous shows
+    for query in upcoming_shows_query:
+        data = {
+            "artist_id": query.artist.id,
+            "artist_name": query.artist.name,
+            "artist_image_link": query.artist.image_link,
+            "start_time": format_datetime(str(query.start_time))
+        }
+        upcoming_shows.append(data)
+
+    for show in past_shows_query:
+        data = {
+            "artist_id": show.artist_id,
+            "artist_name": show.artist.name,
+            "artist_image_link": show.artist.image_link,
+            "start_time": format_datetime(str(show.start_time))
+        }
+        past_shows.append(data)
 
     # Display past and upcoming shows per venue
     data = {
@@ -188,11 +209,14 @@ def show_venue(venue_id):
         "seeking_talent": venue.seeking_talent,
         "seeking_description": venue.seeking_description,
         "image_link": venue.image_link,
-        "past_shows": past_shows_query,
-        "upcoming_shows": upcoming_shows_query,
-        "past_shows_count": len(past_shows_query),
-        "upcoming_shows_count": len(upcoming_shows_query)
+        "past_shows": past_shows,
+        "upcoming_shows": upcoming_shows,
+        "past_shows_count": len(past_shows),
+        "upcoming_shows_count": len(upcoming_shows)
     }
+
+    # len(past_shows_query)
+    # len(past_shows_query)
 
     return render_template('pages/show_venue.html', venue=data)
 
@@ -291,12 +315,33 @@ def show_artist(artist_id):
     current_time = datetime.now()
 
     # Search for upcoming shows
-    upcoming_shows_query = db.session.query(Show).join(Artist).filter(Show.artist_id == artist_id).filter(
+    upcoming_shows_query = db.session.query(Show).join(Venue, Show.venue_id == Venue.id).filter(
         Show.start_time > current_time).all()
+    upcoming_shows = []
 
     # Search for past shows
-    past_shows_query = db.session.query(Show).join(Artist).filter(Show.artist_id == artist_id).filter(
+    past_shows_query = db.session.query(Show).join(Venue, Show.venue_id == Venue.id).filter(
         Show.start_time < current_time).all()
+    past_shows = []
+
+    # Search for upcoming and previous shows
+    for query in upcoming_shows_query:
+        data = {
+            "artist_id": query.venue.id,
+            "artist_name": query.venue.name,
+            "artist_image_link": query.venue.image_link,
+            "start_time": format_datetime(str(query.start_time))
+        }
+        upcoming_shows.append(data)
+
+    for show in past_shows_query:
+        data = {
+            "artist_id": show.artist_id,
+            "artist_name": show.artist.name,
+            "artist_image_link": show.artist.image_link,
+            "start_time": format_datetime(str(show.start_time))
+        }
+        past_shows.append(data)
 
     data = {
         "id": artist.id,
@@ -307,10 +352,10 @@ def show_artist(artist_id):
         "phone": artist.phone,
         "facebook_link": artist.facebook_link,
         "image_link": artist.image_link,
-        "past_shows": past_shows_query,
-        "upcoming_shows": upcoming_shows_query,
-        "past_shows_count": len(past_shows_query),
-        "upcoming_shows_count": len(upcoming_shows_query)
+        "past_shows": past_shows,
+        "upcoming_shows": upcoming_shows,
+        "past_shows_count": len(past_shows),
+        "upcoming_shows_count": len(upcoming_shows)
     }
 
     return render_template('pages/show_artist.html', artist=data)
