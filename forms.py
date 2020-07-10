@@ -190,7 +190,7 @@ class ArtistForm(FlaskForm):
         ]
     )
     phone = StringField(
-        'phone'
+        'phone', validators=[DataRequired()]
     )
     image_link = StringField(
         'image_link'
