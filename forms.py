@@ -90,11 +90,11 @@ class VenueForm(FlaskForm):
     )
 
     @staticmethod
-    def validate_phone(self, phone):
+    def validate_phone(phone):
         us_phone_num = '^([0-9]{3})[-][0-9]{3}[-][0-9]{4}$'
-        match = re.search(us_phone_num, phone.data)
+        match = re.search(us_phone_num, phone)
         if not match:
-            raise ValidationError('Error, phone number must be in format xxx-xxx-xxxx')
+            return False
 
     image_link = StringField(
         'image_link'
@@ -203,9 +203,9 @@ class ArtistForm(FlaskForm):
     )
 
     @staticmethod
-    def validate_phone(self, phone):
+    def validate_phone(phone):
         us_phone_num = '^([0-9]{3})[-][0-9]{3}[-][0-9]{4}$'
-        match = re.search(us_phone_num, phone.data)
+        match = re.search(us_phone_num, phone)
         if not match:
             raise ValidationError('Error, phone number must be in format xxx-xxx-xxxx')
 
