@@ -521,15 +521,15 @@ def create_artist_submission():
                         phone=form.phone.data, genres=form.genres.data,
                         image_link=form.image_link.data, facebook_link=form.facebook_link.data)
 
-        db.session.add(artist)
-        db.session.commit()
-
         if not form.validate_phone(artist.phone):
             db.session.rollback()
             flash('An error occurred. Artist ' + request.form['name'] + ' could not be created.')
             # closes session
             db.session.close()
             return render_template('pages/home.html')
+
+        db.session.add(artist)
+        db.session.commit()
 
         flash('Artist ' + request.form['name'] + ' was successfully listed!')
     except SQLAlchemyError:
