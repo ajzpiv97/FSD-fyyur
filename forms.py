@@ -1,6 +1,7 @@
+import re
 from datetime import datetime
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
+from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField, ValidationError
 from wtforms.validators import DataRequired, URL
 
 
@@ -87,6 +88,13 @@ class VenueForm(FlaskForm):
     phone = StringField(
         'phone', validators=[DataRequired()]
     )
+
+    def validate_phone(self, phone):
+        us_phone_num = '^([0-9]{3})[-][0-9]{3}[-][0-9]{4}$'
+        match = re.search(us_phone_num, phone.data)
+        if not match:
+            raise ValidationError('Error, phone number must be in format xxx-xxx-xxxx')
+
     image_link = StringField(
         'image_link'
     )
@@ -192,6 +200,13 @@ class ArtistForm(FlaskForm):
     phone = StringField(
         'phone', validators=[DataRequired()]
     )
+
+    def validate_phone(self, phone):
+        us_phone_num = '^([0-9]{3})[-][0-9]{3}[-][0-9]{4}$'
+        match = re.search(us_phone_num, phone.data)
+        if not match:
+            raise ValidationError('Error, phone number must be in format xxx-xxx-xxxx')
+
     image_link = StringField(
         'image_link'
     )
@@ -222,3 +237,9 @@ class ArtistForm(FlaskForm):
     facebook_link = StringField(
         'facebook_link', validators=[URL()]
     )
+
+    def validate_phone(self, phone):
+        us_phone_num = '^([0-9]{3})[-][0-9]{3}[-][0-9]{4}$'
+        match = re.search(us_phone_num, phone.data)
+        if not match:
+            raise ValidationError('Error, phone number must be in format xxx-xxx-xxxx')
